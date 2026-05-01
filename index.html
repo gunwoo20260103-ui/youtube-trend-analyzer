@@ -3,652 +3,220 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>유튜브 트렌드 예측 분석기</title>
+<title>유튜브 트렌드 예측 분析기</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0a0a0f;
-    --surface: #13131a;
-    --surface2: #1c1c26;
-    --border: rgba(255,255,255,0.08);
-    --text: #f0f0f5;
-    --text-muted: rgba(240,240,245,0.45);
-    --text-dim: rgba(240,240,245,0.25);
-    --tiktok: #ff4060;
-    --insta: #f0a500;
-    --youtube: #4caf7d;
-    --purple: #8b7ff5;
-    --accent: #5b8fff;
-    --mono: 'DM Mono', monospace;
-    --sans: 'Noto Sans KR', sans-serif;
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--sans);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  /* 배경 효과 */
-  body::before {
-    content: '';
-    position: fixed;
-    top: -200px; left: -200px;
-    width: 600px; height: 600px;
-    background: radial-gradient(circle, rgba(91,143,255,0.06) 0%, transparent 70%);
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  body::after {
-    content: '';
-    position: fixed;
-    bottom: -200px; right: -200px;
-    width: 500px; height: 500px;
-    background: radial-gradient(circle, rgba(139,127,245,0.05) 0%, transparent 70%);
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .app {
-    position: relative;
-    z-index: 1;
-    max-width: 960px;
-    margin: 0 auto;
-    padding: 32px 24px;
-  }
-
-  /* 헤더 */
-  .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 32px;
-    padding-bottom: 24px;
-    border-bottom: 0.5px solid var(--border);
-  }
-
-  .header-left h1 {
-    font-size: 20px;
-    font-weight: 500;
-    letter-spacing: -0.02em;
-    color: var(--text);
-  }
-
-  .header-left p {
-    font-size: 12px;
-    color: var(--text-muted);
-    margin-top: 4px;
-    font-family: var(--mono);
-  }
-
-  .header-right {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
-
-  .badge {
-    font-family: var(--mono);
-    font-size: 11px;
-    padding: 4px 10px;
-    border-radius: 20px;
-    border: 0.5px solid;
-  }
-
-  .badge-what { color: var(--youtube); border-color: rgba(76,175,125,0.3); background: rgba(76,175,125,0.08); }
-  .badge-when { color: var(--insta); border-color: rgba(240,165,0,0.3); background: rgba(240,165,0,0.08); }
-
-  /* 탭 */
-  .tabs {
-    display: flex;
-    gap: 2px;
-    margin-bottom: 24px;
-    background: var(--surface);
-    border-radius: 10px;
-    padding: 4px;
-    border: 0.5px solid var(--border);
-  }
-
-  .tab {
-    flex: 1;
-    padding: 8px 12px;
-    font-size: 12px;
-    font-family: var(--sans);
-    cursor: pointer;
-    border: none;
-    background: none;
-    color: var(--text-muted);
-    border-radius: 7px;
-    transition: all 0.2s;
-    font-weight: 400;
-  }
-
-  .tab.active {
-    background: var(--surface2);
-    color: var(--text);
-    font-weight: 500;
-    border: 0.5px solid var(--border);
-  }
-
-  .section { display: none; }
-  .section.active { display: block; }
-
-  /* 카드 */
-  .card {
-    background: var(--surface);
-    border: 0.5px solid var(--border);
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 12px;
-  }
-
-  .card-title {
-    font-size: 10px;
-    font-family: var(--mono);
-    color: var(--text-dim);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    margin-bottom: 16px;
-  }
-
-  /* 메트릭 */
-  .metrics {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    margin-bottom: 12px;
-  }
-
-  .metric {
-    background: var(--surface2);
-    border: 0.5px solid var(--border);
-    border-radius: 10px;
-    padding: 14px;
-  }
-
-  .metric-label {
-    font-size: 10px;
-    font-family: var(--mono);
-    color: var(--text-dim);
-    margin-bottom: 6px;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-  }
-
-  .metric-value {
-    font-size: 26px;
-    font-weight: 700;
-    font-family: var(--mono);
-    letter-spacing: -0.02em;
-  }
-
-  .metric-sub {
-    font-size: 11px;
-    color: var(--text-muted);
-    margin-top: 3px;
-  }
-
-  /* 플랫폼 흐름 */
-  .platform-flow {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .platform-box {
-    flex: 1;
-    border-radius: 10px;
-    padding: 14px;
-    border: 0.5px solid;
-    text-align: center;
-  }
-
-  .platform-box.tiktok { border-color: rgba(255,64,96,0.3); background: rgba(255,64,96,0.06); }
-  .platform-box.instagram { border-color: rgba(240,165,0,0.3); background: rgba(240,165,0,0.06); }
-  .platform-box.youtube { border-color: rgba(76,175,125,0.3); background: rgba(76,175,125,0.06); }
-
-  .platform-name { font-size: 13px; font-weight: 500; }
-  .platform-name.tiktok { color: var(--tiktok); }
-  .platform-name.instagram { color: var(--insta); }
-  .platform-name.youtube { color: var(--youtube); }
-  .platform-time { font-size: 10px; color: var(--text-muted); margin-top: 3px; font-family: var(--mono); }
-  .platform-status { font-size: 11px; margin-top: 6px; font-weight: 500; }
-
-  .arrow-col {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    color: var(--text-dim);
-  }
-
-  .arrow-col span:first-child { font-size: 16px; }
-  .arrow-col span:last-child { font-size: 10px; font-family: var(--mono); }
-
-  /* 게이지 */
-  .gauge-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 12px;
-  }
-
-  .gauge-label { font-size: 12px; color: var(--text-muted); min-width: 72px; }
-
-  .gauge-bar {
-    flex: 1;
-    height: 4px;
-    background: var(--surface2);
-    border-radius: 2px;
-    overflow: hidden;
-  }
-
-  .gauge-fill { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
-  .gauge-value { font-size: 12px; font-family: var(--mono); min-width: 36px; text-align: right; }
-
-  /* 타임라인 */
-  .timeline { padding-left: 16px; border-left: 0.5px solid var(--border); }
-
-  .timeline-item { padding: 0 0 20px 20px; position: relative; }
-
-  .timeline-item::before {
-    content: '';
-    position: absolute;
-    left: -5px; top: 4px;
-    width: 9px; height: 9px;
-    border-radius: 50%;
-    background: var(--surface2);
-    border: 1.5px solid var(--border);
-  }
-
-  .timeline-item.past::before { background: var(--youtube); border-color: var(--youtube); }
-  .timeline-item.now::before { background: var(--insta); border-color: var(--insta); width: 11px; height: 11px; left: -6px; box-shadow: 0 0 8px rgba(240,165,0,0.4); }
-  .timeline-item.future::before { background: var(--accent); border-color: var(--accent); }
-  .timeline-item.predict::before { background: transparent; border-color: var(--purple); border-style: dashed; }
-
-  .timeline-label { font-size: 10px; font-family: var(--mono); color: var(--text-dim); margin-bottom: 4px; }
-  .timeline-title { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
-  .timeline-desc { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
-
-  .tl-badge {
-    display: inline-block;
-    font-size: 10px;
-    font-family: var(--mono);
-    padding: 2px 8px;
-    border-radius: 20px;
-    margin-top: 6px;
-    border: 0.5px solid;
-  }
-
-  .tl-badge.past { color: var(--youtube); border-color: rgba(76,175,125,0.3); background: rgba(76,175,125,0.08); }
-  .tl-badge.now { color: var(--insta); border-color: rgba(240,165,0,0.3); background: rgba(240,165,0,0.08); }
-  .tl-badge.future { color: var(--accent); border-color: rgba(91,143,255,0.3); background: rgba(91,143,255,0.08); }
-  .tl-badge.predict { color: var(--purple); border-color: rgba(139,127,245,0.3); background: rgba(139,127,245,0.08); }
-
-  /* 투 컬럼 */
-  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
-
-  /* 할 일 */
-  .task-list { display: flex; flex-direction: column; gap: 6px; }
-
-  .task-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 9px 12px;
-    background: var(--surface2);
-    border-radius: 8px;
-    cursor: pointer;
-    border: 0.5px solid transparent;
-    transition: border-color 0.2s;
-  }
-
-  .task-item:hover { border-color: var(--border); }
-  .task-item.done { opacity: 0.4; }
-
-  .task-check {
-    width: 15px; height: 15px;
-    border: 1.5px solid rgba(255,255,255,0.2);
-    border-radius: 4px;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 9px;
-  }
-
-  .task-item.done .task-check { background: var(--youtube); border-color: var(--youtube); color: white; }
-  .task-text { font-size: 12px; color: var(--text); flex: 1; }
-  .task-item.done .task-text { text-decoration: line-through; color: var(--text-muted); }
-
-  .task-tag {
-    font-size: 10px;
-    font-family: var(--mono);
-    padding: 2px 7px;
-    border-radius: 4px;
-    border: 0.5px solid;
-  }
-
-  /* 무드 */
-  .mood-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-
-  .mood-item {
-    background: var(--surface2);
-    border: 0.5px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 10px;
-    text-align: center;
-  }
-
-  .mood-icon { font-size: 18px; margin-bottom: 6px; }
-  .mood-name { font-size: 11px; font-weight: 500; color: var(--text); margin-bottom: 8px; }
-  .mood-bar { height: 3px; border-radius: 2px; margin-bottom: 5px; }
-  .mood-pct { font-size: 11px; font-family: var(--mono); color: var(--text-muted); }
-
-  /* 스케줄 탭 */
-  .schedule-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
-
-  .sch-tab {
-    padding: 5px 14px;
-    font-size: 11px;
-    font-family: var(--mono);
-    cursor: pointer;
-    border: 0.5px solid var(--border);
-    border-radius: 20px;
-    background: none;
-    color: var(--text-muted);
-    transition: all 0.2s;
-  }
-
-  .sch-tab.active { background: var(--surface2); color: var(--text); border-color: rgba(255,255,255,0.2); }
-
-  .sch-block {
-    padding: 12px 14px;
-    background: var(--surface2);
-    border-radius: 8px;
-    margin-bottom: 8px;
-    border-left: 2px solid;
-  }
-
-  .sch-block-label { font-size: 10px; font-family: var(--mono); color: var(--text-dim); margin-bottom: 4px; }
-  .sch-block-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
-  .sch-block-desc { font-size: 11px; color: var(--text-muted); line-height: 1.5; }
-
-  /* 영상 현황 */
-  .video-progress-bar {
-    height: 6px;
-    background: var(--surface2);
-    border-radius: 3px;
-    overflow: hidden;
-    margin: 10px 0;
-  }
-
-  .video-progress-fill {
-    height: 100%;
-    border-radius: 3px;
-    background: linear-gradient(90deg, var(--purple), var(--accent));
-    transition: width 0.4s ease;
-  }
-
-  /* 경고 */
-  .warning-box {
-    border-radius: 10px;
-    padding: 14px;
-    margin-bottom: 12px;
-    border: 0.5px solid;
-    transition: all 0.3s;
-  }
-
-  .warning-box.safe { background: rgba(76,175,125,0.06); border-color: rgba(76,175,125,0.2); }
-  .warning-box.danger { background: rgba(255,64,96,0.08); border-color: rgba(255,64,96,0.3); }
-  .warning-title { font-size: 13px; font-weight: 500; margin-bottom: 5px; }
-  .warning-desc { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
-
-  /* 체크리스트 */
-  .checklist-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    background: var(--surface2);
-    border-radius: 8px;
-    margin-bottom: 6px;
-    font-size: 12px;
-  }
-
-  .check-icon { font-size: 14px; font-family: var(--mono); min-width: 20px; }
-
-  /* 버튼 */
-  .btn {
-    width: 100%;
-    padding: 11px;
-    border-radius: 8px;
-    border: 0.5px solid var(--border);
-    background: var(--surface2);
-    color: var(--text);
-    font-size: 12px;
-    font-family: var(--sans);
-    cursor: pointer;
-    margin-top: 8px;
-    transition: all 0.2s;
-  }
-
-  .btn:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.15); }
-
-  .btn-primary {
-    background: rgba(91,143,255,0.15);
-    border-color: rgba(91,143,255,0.3);
-    color: var(--accent);
-    font-weight: 500;
-  }
-
-  .btn-primary:hover { background: rgba(91,143,255,0.22); }
-
-  /* 저장 알림 */
-  .save-toast {
-    position: fixed;
-    bottom: 24px; right: 24px;
-    background: var(--surface);
-    border: 0.5px solid rgba(76,175,125,0.4);
-    color: var(--youtube);
-    font-size: 12px;
-    font-family: var(--mono);
-    padding: 10px 16px;
-    border-radius: 8px;
-    opacity: 0;
-    transform: translateY(8px);
-    transition: all 0.3s;
-    z-index: 999;
-    pointer-events: none;
-  }
-
-  .save-toast.show { opacity: 1; transform: translateY(0); }
-
-  /* API 설정 화면 */
-  .api-overlay {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: var(--bg);
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-  }
-
-  .api-box {
-    background: var(--surface);
-    border: 0.5px solid var(--border);
-    border-radius: 16px;
-    padding: 32px;
-    max-width: 480px;
-    width: 100%;
-  }
-
-  .api-title {
-    font-size: 18px;
-    font-weight: 500;
-    color: var(--text);
-    margin-bottom: 6px;
-  }
-
-  .api-desc {
-    font-size: 12px;
-    color: var(--text-muted);
-    margin-bottom: 24px;
-    line-height: 1.6;
-  }
-
-  .api-input {
-    width: 100%;
-    padding: 11px 14px;
-    background: var(--surface2);
-    border: 0.5px solid var(--border);
-    border-radius: 8px;
-    color: var(--text);
-    font-size: 13px;
-    font-family: var(--mono);
-    outline: none;
-    margin-bottom: 8px;
-    transition: border-color 0.2s;
-  }
-
-  .api-input:focus { border-color: rgba(91,143,255,0.4); }
-  .api-input::placeholder { color: var(--text-dim); }
-
-  .api-error {
-    font-size: 11px;
-    color: var(--tiktok);
-    font-family: var(--mono);
-    margin-bottom: 12px;
-    display: none;
-  }
-
-  .api-note {
-    font-size: 11px;
-    color: var(--text-dim);
-    font-family: var(--mono);
-    margin-top: 12px;
-    line-height: 1.6;
-  }
-
-  /* 분석 로딩 */
-  .analyzing {
-    display: none;
-    text-align: center;
-    padding: 40px 0;
-  }
-
-  .analyzing.show { display: block; }
-
-  .analyzing-text {
-    font-size: 13px;
-    color: var(--text-muted);
-    font-family: var(--mono);
-    margin-top: 16px;
-  }
-
-  .spinner {
-    width: 32px;
-    height: 32px;
-    border: 2px solid var(--border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    margin: 0 auto;
-  }
-
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* 설정 버튼 */
-  .settings-btn {
-    position: fixed;
-    bottom: 24px; left: 24px;
-    background: var(--surface);
-    border: 0.5px solid var(--border);
-    border-radius: 8px;
-    padding: 8px 14px;
-    font-size: 11px;
-    font-family: var(--mono);
-    color: var(--text-muted);
-    cursor: pointer;
-    z-index: 50;
-    transition: all 0.2s;
-  }
-
-  .settings-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.2); }
-
-  input[type=range] {
-    width: 100%;
-    accent-color: var(--purple);
-    margin: 8px 0;
-  }
-
-  .divider { height: 0.5px; background: var(--border); margin: 16px 0; }
-
-  .signal-note {
-    background: rgba(139,127,245,0.06);
-    border: 0.5px solid rgba(139,127,245,0.2);
-    border-radius: 8px;
-    padding: 12px 14px;
-    font-size: 12px;
-    color: rgba(139,127,245,0.8);
-    line-height: 1.6;
-  }
-
-  @media (max-width: 600px) {
-    .metrics { grid-template-columns: repeat(2, 1fr); }
-    .two-col { grid-template-columns: 1fr; }
-    .mood-grid { grid-template-columns: repeat(2, 1fr); }
-    .platform-flow { flex-direction: column; }
-    .arrow-col { transform: rotate(90deg); }
-  }
+:root {
+  --bg: #0a0a0f;
+  --surface: #13131a;
+  --surface2: #1c1c26;
+  --border: rgba(255,255,255,0.08);
+  --text: #f0f0f5;
+  --text-muted: rgba(240,240,245,0.45);
+  --text-dim: rgba(240,240,245,0.25);
+  --tiktok: #ff4060;
+  --insta: #f0a500;
+  --youtube: #4caf7d;
+  --purple: #8b7ff5;
+  --accent: #5b8fff;
+  --mono: 'DM Mono', monospace;
+  --sans: 'Noto Sans KR', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; overflow-x: hidden; }
+
+.api-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 24px; }
+.api-box { background: var(--surface); border: 0.5px solid var(--border); border-radius: 16px; padding: 32px; max-width: 500px; width: 100%; }
+.api-box h2 { font-size: 18px; font-weight: 500; margin-bottom: 6px; }
+.api-box p { font-size: 12px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.7; }
+.api-label { font-size: 11px; font-family: var(--mono); color: var(--text-dim); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.06em; }
+.api-input { width: 100%; padding: 10px 14px; background: var(--surface2); border: 0.5px solid var(--border); border-radius: 8px; color: var(--text); font-size: 13px; font-family: var(--mono); outline: none; margin-bottom: 12px; }
+.api-input:focus { border-color: rgba(91,143,255,0.4); }
+.api-input::placeholder { color: var(--text-dim); }
+.api-error { font-size: 11px; color: var(--tiktok); font-family: var(--mono); margin-bottom: 10px; display: none; }
+.api-note { font-size: 11px; color: var(--text-dim); margin-top: 12px; line-height: 1.6; font-family: var(--mono); }
+
+.app { position: relative; z-index: 1; max-width: 980px; margin: 0 auto; padding: 28px 24px; }
+.header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 0.5px solid var(--border); }
+.header h1 { font-size: 20px; font-weight: 500; letter-spacing: -0.02em; }
+.header p { font-size: 12px; color: var(--text-muted); margin-top: 4px; font-family: var(--mono); }
+.badges { display: flex; gap: 6px; }
+.badge { font-family: var(--mono); font-size: 11px; padding: 4px 10px; border-radius: 20px; border: 0.5px solid; }
+.badge-what { color: var(--youtube); border-color: rgba(76,175,125,0.3); background: rgba(76,175,125,0.08); }
+.badge-when { color: var(--insta); border-color: rgba(240,165,0,0.3); background: rgba(240,165,0,0.08); }
+
+.tabs { display: flex; gap: 2px; margin-bottom: 20px; background: var(--surface); border-radius: 10px; padding: 4px; border: 0.5px solid var(--border); }
+.tab { flex: 1; padding: 8px 10px; font-size: 12px; cursor: pointer; border: none; background: none; color: var(--text-muted); border-radius: 7px; transition: all 0.2s; }
+.tab.active { background: var(--surface2); color: var(--text); font-weight: 500; border: 0.5px solid var(--border); }
+.section { display: none; }
+.section.active { display: block; }
+
+.card { background: var(--surface); border: 0.5px solid var(--border); border-radius: 12px; padding: 18px 20px; margin-bottom: 12px; }
+.card-title { font-size: 10px; font-family: var(--mono); color: var(--text-dim); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 14px; }
+
+.metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px; }
+.metric { background: var(--surface2); border: 0.5px solid var(--border); border-radius: 10px; padding: 14px; }
+.metric-label { font-size: 10px; font-family: var(--mono); color: var(--text-dim); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.06em; }
+.metric-value { font-size: 24px; font-weight: 700; font-family: var(--mono); letter-spacing: -0.02em; }
+.metric-sub { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+
+.prediction-card { background: linear-gradient(135deg, rgba(139,127,245,0.04) 0%, rgba(91,143,255,0.04) 100%); border: 0.5px solid rgba(139,127,245,0.3); border-radius: 12px; padding: 20px; margin-bottom: 12px; }
+.prediction-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.prediction-title { font-size: 14px; font-weight: 500; color: var(--purple); }
+.prediction-confidence { font-size: 11px; font-family: var(--mono); padding: 3px 10px; border-radius: 20px; border: 0.5px solid rgba(139,127,245,0.3); color: var(--purple); }
+.prediction-body { font-size: 13px; color: var(--text); line-height: 1.8; margin-bottom: 16px; }
+.prediction-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+.pred-metric { background: var(--surface2); border-radius: 8px; padding: 10px; text-align: center; }
+.pred-metric-label { font-size: 10px; font-family: var(--mono); color: var(--text-dim); margin-bottom: 4px; }
+.pred-metric-value { font-size: 13px; font-weight: 700; }
+
+.timeline { padding-left: 16px; border-left: 0.5px solid var(--border); }
+.timeline-item { padding: 0 0 20px 20px; position: relative; }
+.timeline-item::before { content: ''; position: absolute; left: -5px; top: 4px; width: 9px; height: 9px; border-radius: 50%; background: var(--surface2); border: 1.5px solid var(--border); }
+.timeline-item.past::before { background: var(--youtube); border-color: var(--youtube); }
+.timeline-item.now::before { background: var(--insta); border-color: var(--insta); width: 11px; height: 11px; left: -6px; box-shadow: 0 0 8px rgba(240,165,0,0.4); }
+.timeline-item.future::before { background: var(--accent); border-color: var(--accent); }
+.timeline-item.predict::before { background: transparent; border-color: var(--purple); border-style: dashed; }
+.tl-label { font-size: 10px; font-family: var(--mono); color: var(--text-dim); margin-bottom: 4px; }
+.tl-title { font-size: 14px; font-weight: 500; margin-bottom: 3px; }
+.tl-desc { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+.tl-badge { display: inline-block; font-size: 10px; font-family: var(--mono); padding: 2px 8px; border-radius: 20px; margin-top: 6px; border: 0.5px solid; }
+.tl-badge.past { color: var(--youtube); border-color: rgba(76,175,125,0.3); background: rgba(76,175,125,0.08); }
+.tl-badge.now { color: var(--insta); border-color: rgba(240,165,0,0.3); background: rgba(240,165,0,0.08); }
+.tl-badge.future { color: var(--accent); border-color: rgba(91,143,255,0.3); background: rgba(91,143,255,0.08); }
+.tl-badge.predict { color: var(--purple); border-color: rgba(139,127,245,0.3); background: rgba(139,127,245,0.08); }
+
+.gauge-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.gauge-label { font-size: 12px; color: var(--text-muted); min-width: 72px; }
+.gauge-bar { flex: 1; height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+.gauge-fill { height: 100%; border-radius: 2px; transition: width 0.8s ease; }
+.gauge-value { font-size: 12px; font-family: var(--mono); min-width: 36px; text-align: right; }
+
+.platform-flow { display: flex; align-items: center; gap: 8px; }
+.platform-box { flex: 1; border-radius: 10px; padding: 14px; border: 0.5px solid; text-align: center; }
+.platform-box.tiktok { border-color: rgba(255,64,96,0.3); background: rgba(255,64,96,0.06); }
+.platform-box.instagram { border-color: rgba(240,165,0,0.3); background: rgba(240,165,0,0.06); }
+.platform-box.youtube { border-color: rgba(76,175,125,0.3); background: rgba(76,175,125,0.06); }
+.platform-name { font-size: 13px; font-weight: 500; }
+.platform-time { font-size: 10px; color: var(--text-muted); margin-top: 3px; font-family: var(--mono); }
+.platform-status { font-size: 11px; margin-top: 6px; font-weight: 500; }
+.arrow-col { display: flex; flex-direction: column; align-items: center; gap: 2px; color: var(--text-dim); font-size: 16px; }
+.arrow-col span:last-child { font-size: 10px; font-family: var(--mono); }
+
+.schedule-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
+.schedule-col { background: var(--surface2); border-radius: 10px; padding: 14px; }
+.schedule-col-title { font-size: 11px; font-family: var(--mono); color: var(--text-dim); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
+.schedule-item { padding: 8px 10px; background: var(--surface); border-radius: 6px; margin-bottom: 6px; border-left: 2px solid; }
+.schedule-item-date { font-size: 10px; font-family: var(--mono); color: var(--text-dim); margin-bottom: 2px; }
+.schedule-item-title { font-size: 12px; font-weight: 500; color: var(--text); margin-bottom: 2px; }
+.schedule-item-desc { font-size: 11px; color: var(--text-muted); }
+
+.task-list { display: flex; flex-direction: column; gap: 6px; }
+.task-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: var(--surface2); border-radius: 8px; cursor: pointer; border: 0.5px solid transparent; transition: border-color 0.2s; }
+.task-item:hover { border-color: var(--border); }
+.task-item.done { opacity: 0.4; }
+.task-check { width: 15px; height: 15px; border: 1.5px solid rgba(255,255,255,0.2); border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 9px; }
+.task-item.done .task-check { background: var(--youtube); border-color: var(--youtube); color: white; }
+.task-text { font-size: 12px; flex: 1; }
+.task-item.done .task-text { text-decoration: line-through; color: var(--text-muted); }
+.task-tag { font-size: 10px; font-family: var(--mono); padding: 2px 7px; border-radius: 4px; border: 0.5px solid; }
+
+.mood-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.mood-item { background: var(--surface2); border: 0.5px solid var(--border); border-radius: 10px; padding: 12px 10px; text-align: center; }
+.mood-icon { font-size: 18px; margin-bottom: 6px; }
+.mood-name { font-size: 11px; font-weight: 500; margin-bottom: 8px; }
+.mood-bar { height: 3px; border-radius: 2px; margin-bottom: 5px; }
+.mood-pct { font-size: 11px; font-family: var(--mono); color: var(--text-muted); }
+
+.warning-box { border-radius: 10px; padding: 14px; margin-bottom: 12px; border: 0.5px solid; transition: all 0.3s; }
+.warning-box.safe { background: rgba(76,175,125,0.06); border-color: rgba(76,175,125,0.2); }
+.warning-box.danger { background: rgba(255,64,96,0.08); border-color: rgba(255,64,96,0.3); }
+.warning-title { font-size: 13px; font-weight: 500; margin-bottom: 5px; }
+.warning-desc { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+
+.btn { width: 100%; padding: 11px; border-radius: 8px; border: 0.5px solid var(--border); background: var(--surface2); color: var(--text); font-size: 13px; font-family: var(--sans); cursor: pointer; margin-top: 8px; transition: all 0.2s; }
+.btn:hover { background: rgba(255,255,255,0.06); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-primary { background: rgba(91,143,255,0.15); border-color: rgba(91,143,255,0.3); color: var(--accent); font-weight: 500; }
+.btn-primary:hover:not(:disabled) { background: rgba(91,143,255,0.22); }
+.btn-purple { background: rgba(139,127,245,0.15); border-color: rgba(139,127,245,0.3); color: var(--purple); font-weight: 500; }
+.btn-purple:hover:not(:disabled) { background: rgba(139,127,245,0.22); }
+
+.analyzing-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(10,10,15,0.92); z-index: 150; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
+.analyzing-overlay.show { display: flex; }
+.spinner { width: 36px; height: 36px; border: 2px solid var(--border); border-top-color: var(--purple); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.analyzing-text { font-size: 13px; color: var(--text-muted); font-family: var(--mono); }
+.analyzing-step { font-size: 11px; color: var(--text-dim); font-family: var(--mono); }
+
+.save-toast { position: fixed; bottom: 24px; right: 24px; background: var(--surface); border: 0.5px solid rgba(76,175,125,0.4); color: var(--youtube); font-size: 12px; font-family: var(--mono); padding: 10px 16px; border-radius: 8px; opacity: 0; transform: translateY(8px); transition: all 0.3s; z-index: 999; pointer-events: none; }
+.save-toast.show { opacity: 1; transform: translateY(0); }
+.settings-btn { position: fixed; bottom: 24px; left: 24px; background: var(--surface); border: 0.5px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 11px; font-family: var(--mono); color: var(--text-muted); cursor: pointer; z-index: 50; transition: all 0.2s; }
+.settings-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.2); }
+
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.video-progress-bar { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; margin: 10px 0; }
+.video-progress-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--purple), var(--accent)); transition: width 0.4s ease; }
+input[type=range] { width: 100%; accent-color: var(--purple); margin: 8px 0; }
+.checklist-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--surface2); border-radius: 8px; margin-bottom: 6px; font-size: 12px; }
+.check-icon { font-size: 14px; font-family: var(--mono); min-width: 20px; }
+.signal-note { background: rgba(139,127,245,0.06); border: 0.5px solid rgba(139,127,245,0.2); border-radius: 8px; padding: 12px 14px; font-size: 12px; color: rgba(139,127,245,0.8); line-height: 1.6; }
+
+@media (max-width: 700px) {
+  .metrics { grid-template-columns: repeat(2, 1fr); }
+  .two-col { grid-template-columns: 1fr; }
+  .mood-grid { grid-template-columns: repeat(2, 1fr); }
+  .prediction-metrics { grid-template-columns: 1fr; }
+  .schedule-grid { grid-template-columns: 1fr; }
+  .platform-flow { flex-direction: column; }
+}
 </style>
 </head>
 <body>
 
-<!-- API 설정 화면 -->
 <div class="api-overlay" id="api-overlay">
   <div class="api-box">
-    <div class="api-title">YouTube API 키 설정</div>
-    <div class="api-desc">
-      실제 트렌드 데이터를 분석하려면 YouTube Data API v3 키가 필요해요.<br>
-      Google Cloud Console에서 발급받은 API 키를 입력해주세요.
-    </div>
-    <input class="api-input" type="password" id="api-key-input" placeholder="AIzaSy..." />
-    <div class="api-error" id="api-error">API 키가 올바르지 않아요. 다시 확인해주세요.</div>
-    <button class="btn btn-primary" onclick="saveApiKey()">분析기 시작하기</button>
+    <h2>트렌드 예측 분析기 설정</h2>
+    <p>실제 트렌드 데이터 수집과 AI 예측을 위해 API 키가 필요해요. 모든 키는 이 브라우저에만 저장되며 외부로 전송되지 않아요.</p>
+    <div class="api-label">YouTube Data API 키</div>
+    <input class="api-input" type="password" id="yt-key" placeholder="AIzaSy...">
+    <div class="api-label">Claude API 키 (예측 두뇌)</div>
+    <input class="api-input" type="password" id="claude-key" placeholder="sk-ant-api03-...">
+    <div class="api-error" id="api-error">API 키를 확인해주세요. YouTube: AIzaSy... / Claude: sk-ant...</div>
+    <button class="btn btn-primary" onclick="saveKeys()" style="margin-top:4px">분析기 시작하기</button>
     <div class="api-note">
-      ※ API 키는 이 브라우저에만 저장되며 외부로 전송되지 않아요.<br>
-      ※ 하루 무료 요청 한도: 10,000 유닛
+      ※ YouTube API: 하루 10,000 유닛 무료<br>
+      ※ Claude API: 예측 분析 시에만 사용 (토큰 절약)<br>
+      ※ Google Search CX: 자동 적용됨
     </div>
   </div>
 </div>
 
-<div class="app">
+<div class="analyzing-overlay" id="analyzing-overlay">
+  <div class="spinner"></div>
+  <div class="analyzing-text">AI 트렌드 예측 분析 중...</div>
+  <div class="analyzing-step" id="analyzing-step">데이터 수집 중</div>
+</div>
 
+<div class="app">
   <div class="header">
-    <div class="header-left">
-      <h1>유튜브 트렌드 예측 분석기</h1>
-      <p>TikTok → Instagram → YouTube · 멀티플랫폼 트렌드 흐름</p>
+    <div>
+      <h1>유튜브 트렌드 예측 분析기</h1>
+      <p id="header-sub">TikTok → Instagram → YouTube · 멀티플랫폼 트렌드 흐름</p>
     </div>
-    <div class="header-right">
+    <div class="badges">
       <span class="badge badge-what">내용 99%</span>
       <span class="badge badge-when">타이밍 80%+</span>
     </div>
   </div>
 
   <div class="tabs">
-    <button class="tab active" onclick="showTab('dashboard', this)">대시보드</button>
-    <button class="tab" onclick="showTab('timeline', this)">트렌드 흐름</button>
-    <button class="tab" onclick="showTab('signals', this)">신호 강도</button>
-    <button class="tab" onclick="showTab('schedule', this)">스케줄</button>
-    <button class="tab" onclick="showTab('warning', this)">경고 패널</button>
+    <button class="tab active" onclick="showTab('dashboard',this)">대시보드</button>
+    <button class="tab" onclick="showTab('prediction',this)">예측 결과</button>
+    <button class="tab" onclick="showTab('timeline',this)">트렌드 흐름</button>
+    <button class="tab" onclick="showTab('schedule',this)">스케줄</button>
+    <button class="tab" onclick="showTab('signals',this)">신호 강도</button>
+    <button class="tab" onclick="showTab('warning',this)">경고 패널</button>
   </div>
 
   <!-- 대시보드 -->
@@ -665,9 +233,14 @@
         <div class="metric-sub">언제 올지</div>
       </div>
       <div class="metric">
+        <div class="metric-label">트렌드 신호</div>
+        <div class="metric-value" style="color:var(--purple);font-size:16px;padding-top:6px" id="trend-signal">분析 대기</div>
+        <div class="metric-sub">AI 예측 기반</div>
+      </div>
+      <div class="metric">
         <div class="metric-label">채널 오픈</div>
-        <div class="metric-value" style="color:var(--purple);font-size:16px;padding-top:6px" id="open-signal">대기중</div>
-        <div class="metric-sub">분석기 신호 대기</div>
+        <div class="metric-value" style="color:var(--accent);font-size:16px;padding-top:6px" id="open-signal">대기중</div>
+        <div class="metric-sub">신호 대기</div>
       </div>
     </div>
 
@@ -675,19 +248,19 @@
       <div class="card-title">플랫폼 트렌드 이동 경로</div>
       <div class="platform-flow">
         <div class="platform-box tiktok">
-          <div class="platform-name tiktok">TikTok</div>
+          <div class="platform-name" style="color:var(--tiktok)">TikTok</div>
           <div class="platform-time">48~72h 피크</div>
           <div class="platform-status" style="color:var(--tiktok)">신호 감지 중</div>
         </div>
         <div class="arrow-col"><span>→</span><span>2~3일</span></div>
         <div class="platform-box instagram">
-          <div class="platform-name instagram">인스타 릴스</div>
+          <div class="platform-name" style="color:var(--insta)">인스타 릴스</div>
           <div class="platform-time">3~5일 수명</div>
           <div class="platform-status" style="color:var(--insta)">검증 중</div>
         </div>
         <div class="arrow-col"><span>→</span><span>3~7일</span></div>
         <div class="platform-box youtube">
-          <div class="platform-name youtube">유튜브 쇼츠</div>
+          <div class="platform-name" style="color:var(--youtube)">유튜브 쇼츠</div>
           <div class="platform-time">1~2주 수명</div>
           <div class="platform-status" style="color:var(--youtube)">업로드 준비</div>
         </div>
@@ -699,23 +272,23 @@
         <div class="card-title">현재 감성 무드</div>
         <div class="gauge-row">
           <div class="gauge-label">그리움</div>
-          <div class="gauge-bar"><div class="gauge-fill" style="width:78%;background:var(--purple)"></div></div>
-          <div class="gauge-value" style="color:var(--purple)">78%</div>
+          <div class="gauge-bar"><div class="gauge-fill" id="mood-1" style="width:0%;background:var(--purple)"></div></div>
+          <div class="gauge-value" style="color:var(--purple)" id="mood-1-val">-</div>
         </div>
         <div class="gauge-row">
           <div class="gauge-label">설렘</div>
-          <div class="gauge-bar"><div class="gauge-fill" style="width:65%;background:var(--youtube)"></div></div>
-          <div class="gauge-value" style="color:var(--youtube)">65%</div>
+          <div class="gauge-bar"><div class="gauge-fill" id="mood-2" style="width:0%;background:var(--youtube)"></div></div>
+          <div class="gauge-value" style="color:var(--youtube)" id="mood-2-val">-</div>
         </div>
         <div class="gauge-row">
           <div class="gauge-label">성공 욕구</div>
-          <div class="gauge-bar"><div class="gauge-fill" style="width:82%;background:var(--insta)"></div></div>
-          <div class="gauge-value" style="color:var(--insta)">82%</div>
+          <div class="gauge-bar"><div class="gauge-fill" id="mood-3" style="width:0%;background:var(--insta)"></div></div>
+          <div class="gauge-value" style="color:var(--insta)" id="mood-3-val">-</div>
         </div>
         <div class="gauge-row">
           <div class="gauge-label">평화</div>
-          <div class="gauge-bar"><div class="gauge-fill" style="width:54%;background:var(--accent)"></div></div>
-          <div class="gauge-value" style="color:var(--accent)">54%</div>
+          <div class="gauge-bar"><div class="gauge-fill" id="mood-4" style="width:0%;background:var(--accent)"></div></div>
+          <div class="gauge-value" style="color:var(--accent)" id="mood-4-val">-</div>
         </div>
       </div>
 
@@ -724,139 +297,52 @@
         <div class="task-list">
           <div class="task-item" onclick="toggleTask(this)">
             <div class="task-check"></div>
-            <div class="task-text">TikTok 트렌드 신호 확인</div>
-            <span class="task-tag" style="color:var(--tiktok);border-color:rgba(255,64,96,0.3)">TikTok</span>
+            <div class="task-text">AI 트렌드 예측 분析 실행</div>
+            <span class="task-tag" style="color:var(--purple);border-color:rgba(139,127,245,0.3)">AI</span>
           </div>
           <div class="task-item" onclick="toggleTask(this)">
             <div class="task-check"></div>
-            <div class="task-text">인스타 릴스 패턴 분석</div>
-            <span class="task-tag" style="color:var(--insta);border-color:rgba(240,165,0,0.3)">인스타</span>
+            <div class="task-text">예측 결과 확인 및 판단</div>
+            <span class="task-tag" style="color:var(--accent);border-color:rgba(91,143,255,0.3)">예측</span>
           </div>
-          <div class="task-item done" onclick="toggleTask(this)">
-            <div class="task-check">✓</div>
-            <div class="task-text">영상 제작 진행 확인</div>
+          <div class="task-item" onclick="toggleTask(this)">
+            <div class="task-check"></div>
+            <div class="task-text">스케줄 업데이트</div>
+            <span class="task-tag" style="color:var(--insta);border-color:rgba(240,165,0,0.3)">일정</span>
+          </div>
+          <div class="task-item" onclick="toggleTask(this)">
+            <div class="task-check"></div>
+            <div class="task-text">영상 제작 진행</div>
             <span class="task-tag" style="color:var(--youtube);border-color:rgba(76,175,125,0.3)">영상</span>
-          </div>
-          <div class="task-item" onclick="toggleTask(this)">
-            <div class="task-check"></div>
-            <div class="task-text">주간 트렌드 리포트 검토</div>
-            <span class="task-tag" style="color:var(--purple);border-color:rgba(139,127,245,0.3)">분석</span>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="signal-note">
-      갭 감지 모니터링 중 — AI 조절 속도 vs 실제 감성 속도 차이를 추적합니다. 엉뚱한 영상이 갑자기 폭발할 때 즉시 경고가 발생합니다.
+    <button class="btn btn-purple" onclick="runFullAnalysis()" id="analyze-btn">🔮 AI 트렌드 예측 분析 시작</button>
+    <div class="signal-note" style="margin-top:12px">갭 감지 모니터링 중 — AI 조절 속도 vs 실제 감성 속도 차이를 추적합니다. 엉뚱한 영상이 갑자기 폭발할 때 즉시 경고가 발생합니다.</div>
+  </div>
+
+  <!-- 예측 결과 -->
+  <div class="section" id="tab-prediction">
+    <div id="prediction-empty" class="card" style="text-align:center;padding:40px">
+      <div style="font-size:32px;margin-bottom:12px">🔮</div>
+      <div style="font-size:14px;font-weight:500;margin-bottom:6px">예측 데이터가 없어요</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">대시보드에서 AI 트렌드 예측 분析을 실행해주세요</div>
     </div>
+    <div id="prediction-results" style="display:none"></div>
   </div>
 
   <!-- 트렌드 흐름 -->
   <div class="section" id="tab-timeline">
     <div class="card">
       <div class="card-title">트렌드 흐름 타임라인</div>
-      <div class="timeline">
-        <div class="timeline-item past">
-          <div class="timeline-label">4주 전 — TikTok</div>
-          <div class="timeline-title">라이프스타일 현실 도피 감성</div>
-          <div class="timeline-desc">일상을 벗어난 럭셔리/자연 영상이 구독자 없이 폭발적 조회수 기록</div>
-          <span class="tl-badge past">완료 · 인스타 이동 확인</span>
-        </div>
-        <div class="timeline-item past">
-          <div class="timeline-label">2주 전 — 인스타 릴스</div>
-          <div class="timeline-title">감성 여행 + 꿈의 공간 콘텐츠</div>
-          <div class="timeline-desc">TikTok에서 넘어온 현실 도피 감성이 인스타에서 확산</div>
-          <span class="tl-badge past">완료 · 유튜브 이동 예측</span>
-        </div>
+      <div class="timeline" id="timeline-content">
         <div class="timeline-item now">
-          <div class="timeline-label">현재 — 유튜브 쇼츠 ★ 지금 여기</div>
-          <div class="timeline-title">감성 꿈 콘텐츠 안착 중</div>
-          <div class="timeline-desc">현실 도피 + 꿈 실현 영상이 유튜브 쇼츠에서 급상승 중 — 업로드 최적 시점</div>
-          <span class="tl-badge now">진행 중 · 업로드 최적 시점</span>
-        </div>
-        <div class="timeline-item future">
-          <div class="timeline-label">1~2주 후 — TikTok 신호</div>
-          <div class="timeline-title">성취/성공 스토리 감성 부상</div>
-          <div class="timeline-desc">현실 도피에서 "나도 할 수 있다" 성취감 콘텐츠로 이동 예측</div>
-          <span class="tl-badge future">예측 · 신뢰도 82%</span>
-        </div>
-        <div class="timeline-item predict">
-          <div class="timeline-label">3~4주 후 — 예측</div>
-          <div class="timeline-title">성취 + 라이프스타일 융합 콘텐츠</div>
-          <div class="timeline-desc">꿈의 삶을 사는 성공한 사람들의 일상 → 별 선택 구조와 완벽 연결</div>
-          <span class="tl-badge predict">예측 · 신뢰도 74%</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 신호 강도 -->
-  <div class="section" id="tab-signals">
-    <div class="card">
-      <div class="card-title">플랫폼별 트렌드 신호 강도</div>
-      <div class="gauge-row" style="margin-bottom:16px">
-        <div class="gauge-label" style="color:var(--tiktok);font-weight:500">TikTok</div>
-        <div class="gauge-bar"><div class="gauge-fill" style="width:88%;background:var(--tiktok)"></div></div>
-        <div class="gauge-value" style="color:var(--tiktok)">88%</div>
-      </div>
-      <div class="gauge-row" style="margin-bottom:16px">
-        <div class="gauge-label" style="color:var(--insta);font-weight:500">인스타 릴스</div>
-        <div class="gauge-bar"><div class="gauge-fill" style="width:71%;background:var(--insta)"></div></div>
-        <div class="gauge-value" style="color:var(--insta)">71%</div>
-      </div>
-      <div class="gauge-row">
-        <div class="gauge-label" style="color:var(--youtube);font-weight:500">유튜브 쇼츠</div>
-        <div class="gauge-bar"><div class="gauge-fill" style="width:54%;background:var(--youtube)"></div></div>
-        <div class="gauge-value" style="color:var(--youtube)">54%</div>
-      </div>
-      <div class="divider"></div>
-      <div style="font-size:11px;color:var(--text-muted);font-family:var(--mono)">TikTok 신호가 강할수록 유튜브 업로드 타이밍이 임박합니다</div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">감성 무드 방향계</div>
-      <div class="mood-grid">
-        <div class="mood-item">
-          <div class="mood-icon">🌙</div>
-          <div class="mood-name">그리움</div>
-          <div class="mood-bar" style="background:var(--purple)"></div>
-          <div class="mood-pct">78%</div>
-        </div>
-        <div class="mood-item">
-          <div class="mood-icon">✨</div>
-          <div class="mood-name">설렘</div>
-          <div class="mood-bar" style="background:var(--youtube)"></div>
-          <div class="mood-pct">65%</div>
-        </div>
-        <div class="mood-item">
-          <div class="mood-icon">🏆</div>
-          <div class="mood-name">성공 욕구</div>
-          <div class="mood-bar" style="background:var(--insta)"></div>
-          <div class="mood-pct">82%</div>
-        </div>
-        <div class="mood-item">
-          <div class="mood-icon">🌊</div>
-          <div class="mood-name">평화</div>
-          <div class="mood-bar" style="background:var(--accent)"></div>
-          <div class="mood-pct">54%</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">데자뷰 감지기 — 현재 무의식 패턴</div>
-      <div style="display:flex;flex-direction:column;gap:8px">
-        <div style="padding:10px 12px;background:var(--surface2);border-radius:8px">
-          <div style="font-size:12px;font-weight:500;margin-bottom:3px">고요한 자연 + 인간 부재 영상</div>
-          <div style="font-size:11px;color:var(--text-muted)">숲, 바다, 일몰 영상이 반복 등장 — 별 선택 구조와 연결 가능</div>
-        </div>
-        <div style="padding:10px 12px;background:var(--surface2);border-radius:8px">
-          <div style="font-size:12px;font-weight:500;margin-bottom:3px">럭셔리 일상 브이로그</div>
-          <div style="font-size:11px;color:var(--text-muted)">아침 루틴, 고급 호텔, 꿈의 집 — 꿈 실현 콘텐츠 니즈 확인</div>
-        </div>
-        <div style="padding:10px 12px;background:var(--surface2);border-radius:8px">
-          <div style="font-size:12px;font-weight:500;margin-bottom:3px">별/우주/신비 감성 영상</div>
-          <div style="font-size:11px;color:var(--text-muted)">채널 콘셉트와 완벽 매칭 — 지금이 최적 진입 시점</div>
+          <div class="tl-label">현재</div>
+          <div class="tl-title">AI 분析 대기 중</div>
+          <div class="tl-desc">트렌드 예측 분析을 실행하면 실제 데이터가 표시됩니다</div>
+          <span class="tl-badge now">대기 중</span>
         </div>
       </div>
     </div>
@@ -865,86 +351,57 @@
   <!-- 스케줄 -->
   <div class="section" id="tab-schedule">
     <div class="card">
-      <div class="card-title">업로드 스케줄</div>
-      <div class="schedule-tabs">
-        <button class="sch-tab active" onclick="showSchedule('monthly', this)">월간</button>
-        <button class="sch-tab" onclick="showSchedule('weekly', this)">주간</button>
-        <button class="sch-tab" onclick="showSchedule('daily', this)">일간</button>
-      </div>
-
-      <div id="sch-monthly">
-        <div class="sch-block" style="border-color:var(--youtube)">
-          <div class="sch-block-label">4월 (현재)</div>
-          <div class="sch-block-title">감성 꿈 콘텐츠 집중 업로드</div>
-          <div class="sch-block-desc">현실 도피, 자연, 별/우주 테마 영상 선행 배치 — 채널 오픈 사전 준비</div>
-        </div>
-        <div class="sch-block" style="border-color:var(--insta)">
-          <div class="sch-block-label">5월</div>
-          <div class="sch-block-title">성취/성공 감성 영상 준비</div>
-          <div class="sch-block-desc">TikTok 신호 기반 예측 — 성공한 삶, 꿈의 직업 테마 포지션</div>
-        </div>
-        <div class="sch-block" style="border-color:var(--purple)">
-          <div class="sch-block-label">6월</div>
-          <div class="sch-block-title">채널 오픈 목표</div>
-          <div class="sch-block-desc">50개 영상 완성 + 멀티플랫폼 사전 노출 완료 후 분석기 신호 대기</div>
-        </div>
-      </div>
-
-      <div id="sch-weekly" style="display:none">
-        <div class="sch-block" style="border-color:var(--accent)">
-          <div class="sch-block-label">월요일</div>
-          <div class="sch-block-title">주간 리셋 — 새 기준 수신</div>
-          <div class="sch-block-desc">3개 플랫폼 트렌드 재분석 + 이번 주 방향 확인</div>
-        </div>
-        <div class="sch-block" style="border-color:var(--border)">
-          <div class="sch-block-label">화~목요일</div>
-          <div class="sch-block-title">영상 제작 + 신호 모니터링</div>
-          <div class="sch-block-desc">TikTok 갭 발생 여부 체크 + 트렌드 잠복기 확인</div>
-        </div>
-        <div class="sch-block" style="border-color:var(--youtube)">
-          <div class="sch-block-label">금~토요일</div>
-          <div class="sch-block-title">업로드 타이밍 결정</div>
-          <div class="sch-block-desc">분석기 추천 기반 다음 주 업로드 순서 확정</div>
-        </div>
-      </div>
-
-      <div id="sch-daily" style="display:none">
-        <div class="task-list">
-          <div class="task-item" onclick="toggleTask(this)">
-            <div class="task-check"></div>
-            <div class="task-text">TikTok 조회수 폭발 영상 체크 (5분)</div>
-            <span class="task-tag" style="color:var(--tiktok);border-color:rgba(255,64,96,0.3)">오전</span>
-          </div>
-          <div class="task-item" onclick="toggleTask(this)">
-            <div class="task-check"></div>
-            <div class="task-text">인스타 릴스 트렌드 이동 확인 (5분)</div>
-            <span class="task-tag" style="color:var(--insta);border-color:rgba(240,165,0,0.3)">오전</span>
-          </div>
-          <div class="task-item" onclick="toggleTask(this)">
-            <div class="task-check"></div>
-            <div class="task-text">영상 제작 진행 (핵심 업무)</div>
-            <span class="task-tag" style="color:var(--youtube);border-color:rgba(76,175,125,0.3)">오후</span>
-          </div>
-          <div class="task-item" onclick="toggleTask(this)">
-            <div class="task-check"></div>
-            <div class="task-text">갭 발생 신호 최종 확인 (5분)</div>
-            <span class="task-tag" style="color:var(--purple);border-color:rgba(139,127,245,0.3)">저녁</span>
-          </div>
-        </div>
+      <div class="card-title">예측 기반 업로드 스케줄</div>
+      <div id="schedule-content">
+        <div style="text-align:center;padding:30px;color:var(--text-muted);font-size:13px">AI 예측 분析 후 자동으로 스케줄이 생성됩니다</div>
       </div>
     </div>
-
     <div class="card">
       <div class="card-title">영상 제작 현황</div>
       <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:4px">
         <span style="font-size:28px;font-weight:700;font-family:var(--mono);color:var(--purple)" id="video-count">0</span>
         <span style="font-size:13px;color:var(--text-muted)">/ 369개</span>
       </div>
-      <div class="video-progress-bar">
-        <div class="video-progress-fill" id="video-progress" style="width:0%"></div>
-      </div>
+      <div class="video-progress-bar"><div class="video-progress-fill" id="video-progress" style="width:0%"></div></div>
       <input type="range" min="0" max="369" value="0" id="video-slider" oninput="updateVideo(this.value)">
       <div style="font-size:11px;color:var(--text-muted);font-family:var(--mono);margin-top:4px">50개 완성 시 채널 오픈 준비 시작</div>
+    </div>
+  </div>
+
+  <!-- 신호 강도 -->
+  <div class="section" id="tab-signals">
+    <div class="card">
+      <div class="card-title">플랫폼별 트렌드 신호 강도</div>
+      <div class="gauge-row" style="margin-bottom:14px">
+        <div class="gauge-label" style="color:var(--tiktok);font-weight:500">TikTok</div>
+        <div class="gauge-bar"><div class="gauge-fill" id="sig-tiktok" style="width:0%;background:var(--tiktok)"></div></div>
+        <div class="gauge-value" style="color:var(--tiktok)" id="sig-tiktok-val">-</div>
+      </div>
+      <div class="gauge-row" style="margin-bottom:14px">
+        <div class="gauge-label" style="color:var(--insta);font-weight:500">인스타 릴스</div>
+        <div class="gauge-bar"><div class="gauge-fill" id="sig-insta" style="width:0%;background:var(--insta)"></div></div>
+        <div class="gauge-value" style="color:var(--insta)" id="sig-insta-val">-</div>
+      </div>
+      <div class="gauge-row">
+        <div class="gauge-label" style="color:var(--youtube);font-weight:500">유튜브 쇼츠</div>
+        <div class="gauge-bar"><div class="gauge-fill" id="sig-youtube" style="width:0%;background:var(--youtube)"></div></div>
+        <div class="gauge-value" style="color:var(--youtube)" id="sig-youtube-val">-</div>
+      </div>
+      <div style="height:0.5px;background:var(--border);margin:14px 0"></div>
+      <div style="font-size:11px;color:var(--text-muted);font-family:var(--mono)">TikTok 신호가 강할수록 유튜브 업로드 타이밍이 임박합니다</div>
+    </div>
+    <div class="card">
+      <div class="card-title">감성 무드 방향계</div>
+      <div class="mood-grid">
+        <div class="mood-item"><div class="mood-icon">🌙</div><div class="mood-name">그리움</div><div class="mood-bar" style="background:var(--purple)"></div><div class="mood-pct" id="mood-pct-1">-</div></div>
+        <div class="mood-item"><div class="mood-icon">✨</div><div class="mood-name">설렘</div><div class="mood-bar" style="background:var(--youtube)"></div><div class="mood-pct" id="mood-pct-2">-</div></div>
+        <div class="mood-item"><div class="mood-icon">🏆</div><div class="mood-name">성공 욕구</div><div class="mood-bar" style="background:var(--insta)"></div><div class="mood-pct" id="mood-pct-3">-</div></div>
+        <div class="mood-item"><div class="mood-icon">🌊</div><div class="mood-name">평화</div><div class="mood-bar" style="background:var(--accent)"></div><div class="mood-pct" id="mood-pct-4">-</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">데자뷰 감지기 — 현재 무의식 패턴</div>
+      <div id="dejavu-content"><div style="text-align:center;padding:20px;color:var(--text-muted);font-size:12px">AI 분析 후 표시됩니다</div></div>
     </div>
   </div>
 
@@ -952,172 +409,342 @@
   <div class="section" id="tab-warning">
     <div class="warning-box safe" id="warning-box">
       <div class="warning-title" style="color:var(--youtube)">패턴 반복 경고 없음</div>
-      <div class="warning-desc">현재 분석기가 새로운 방향을 탐색 중입니다. 과거 패턴 반복이 감지되지 않았습니다.</div>
+      <div class="warning-desc">현재 분析기가 새로운 방향을 탐색 중입니다.</div>
     </div>
-
+    <div class="card">
+      <div class="card-title">채널 오픈 신호 체크리스트</div>
+      <div class="checklist-item"><span class="check-icon" id="c1" style="color:var(--insta)">○</span><span>영상 50개 이상 완성</span></div>
+      <div class="checklist-item"><span class="check-icon" id="c2" style="color:var(--text-dim)">○</span><span>멀티플랫폼 사전 노출 작업 완료</span></div>
+      <div class="checklist-item"><span class="check-icon" id="c3" style="color:var(--text-dim)">○</span><span>트렌드 흐름 방향 확인</span></div>
+      <div class="checklist-item"><span class="check-icon" id="c4" style="color:var(--text-dim)">○</span><span>감성 무드 방향과 내 콘텐츠 일치 확인</span></div>
+      <div class="checklist-item"><span class="check-icon" id="c5" style="color:var(--text-dim)">○</span><span>분析기 "지금이다" 신호 수신</span></div>
+    </div>
     <div class="card">
       <div class="card-title">패턴 반복 경고 시뮬레이터</div>
-      <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;line-height:1.6">분석기가 과거 패턴으로 회귀하려 할 때 어떻게 경고하는지 확인하세요.</div>
       <button class="btn btn-primary" onclick="triggerWarning()">경고 발생 시뮬레이션</button>
       <button class="btn" onclick="clearWarning()">경고 해제</button>
     </div>
-
-    <div class="card">
-      <div class="card-title">채널 오픈 신호 체크리스트</div>
-      <div class="checklist-item"><span class="check-icon" id="c1" style="color:var(--insta)">○</span><span style="font-size:12px">영상 50개 이상 완성</span></div>
-      <div class="checklist-item"><span class="check-icon" id="c2" style="color:var(--text-dim)">○</span><span style="font-size:12px">멀티플랫폼 사전 노출 작업 완료</span></div>
-      <div class="checklist-item"><span class="check-icon" id="c3" style="color:var(--text-dim)">○</span><span style="font-size:12px">TikTok → 유튜브 트렌드 흐름 확인</span></div>
-      <div class="checklist-item"><span class="check-icon" id="c4" style="color:var(--text-dim)">○</span><span style="font-size:12px">감성 무드 방향과 내 콘텐츠 일치 확인</span></div>
-      <div class="checklist-item"><span class="check-icon" id="c5" style="color:var(--text-dim)">○</span><span style="font-size:12px">분석기 "지금이다" 신호 수신</span></div>
-    </div>
   </div>
-
 </div>
 
 <div class="save-toast" id="save-toast">저장됨</div>
-<button class="settings-btn" onclick="resetApiKey()">⚙ API 키 재설정</button>
+<button class="settings-btn" onclick="resetKeys()">⚙ API 키 재설정</button>
 
 <script>
-// API 키 관리
-function checkApiKey() {
-  const key = localStorage.getItem('yt_api_key');
-  if (key) {
+const SEARCH_CX = '05d5e6cdf48ac4858';
+
+function checkKeys() {
+  const yt = localStorage.getItem('yt_api_key');
+  const cl = localStorage.getItem('claude_api_key');
+  if (yt && cl) {
     document.getElementById('api-overlay').style.display = 'none';
-    loadTrendData(key);
+    loadYoutubeData(yt);
   }
 }
 
-function saveApiKey() {
-  const key = document.getElementById('api-key-input').value.trim();
-  if (!key || !key.startsWith('AIza')) {
+function saveKeys() {
+  const yt = document.getElementById('yt-key').value.trim();
+  const cl = document.getElementById('claude-key').value.trim();
+  if (!yt.startsWith('AIza') || !cl.startsWith('sk-ant')) {
     document.getElementById('api-error').style.display = 'block';
     return;
   }
   document.getElementById('api-error').style.display = 'none';
-  localStorage.setItem('yt_api_key', key);
+  localStorage.setItem('yt_api_key', yt);
+  localStorage.setItem('claude_api_key', cl);
   document.getElementById('api-overlay').style.display = 'none';
-  loadTrendData(key);
+  loadYoutubeData(yt);
 }
 
-function resetApiKey() {
-  localStorage.removeItem('yt_api_key');
-  document.getElementById('api-key-input').value = '';
+function resetKeys() {
+  localStorage.clear();
+  document.getElementById('yt-key').value = '';
+  document.getElementById('claude-key').value = '';
   document.getElementById('api-overlay').style.display = 'flex';
 }
 
-// YouTube 데이터 수집
-async function loadTrendData(apiKey) {
-  showToast('트렌드 데이터 수집 중...');
+async function loadYoutubeData(apiKey) {
   try {
-    const res = await fetch(
-      `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&chart=mostPopular&regionCode=KR&maxResults=20&key=${apiKey}`
-    );
+    const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&chart=mostPopular&regionCode=KR&maxResults=20&key=${apiKey}`);
     const data = await res.json();
-    if (data.error) {
-      showToast('API 오류: ' + data.error.message);
-      return;
+    if (data.error) return;
+    window._ytVideos = data.items;
+    updateBasicUI(data.items);
+    showToast('YouTube 데이터 로드 완료');
+  } catch(e) {}
+}
+
+function updateBasicUI(videos) {
+  if (!videos || !videos.length) return;
+  const titles = videos.map(v => v.snippet.title).join(' ');
+  const moods = analyzeMoods(titles);
+  const moodVals = [moods.그리움, moods.설렘, moods.성공욕구, moods.평화];
+  moodVals.forEach((v, i) => {
+    const pct = Math.round(v);
+    const f = document.getElementById(`mood-${i+1}`);
+    const vl = document.getElementById(`mood-${i+1}-val`);
+    const p = document.getElementById(`mood-pct-${i+1}`);
+    if (f) f.style.width = pct + '%';
+    if (vl) vl.textContent = pct + '%';
+    if (p) p.textContent = pct + '%';
+  });
+  const views = videos.map(v => parseInt(v.statistics.viewCount || 0));
+  const max = Math.max(...views);
+  const avg = views.reduce((a,b)=>a+b,0)/views.length;
+  const str = Math.min(92, Math.round((avg/max)*100+30));
+  const levels = [Math.min(95,str+8), Math.min(85,str), Math.min(75,str-12)];
+  ['tiktok','insta','youtube'].forEach((p,i) => {
+    const g = document.getElementById(`sig-${p}`);
+    const v = document.getElementById(`sig-${p}-val`);
+    if (g) g.style.width = levels[i]+'%';
+    if (v) v.textContent = levels[i]+'%';
+  });
+  const now = new Date();
+  document.getElementById('header-sub').textContent = `TikTok → Instagram → YouTube · ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} 업데이트`;
+}
+
+async function runFullAnalysis() {
+  const ytKey = localStorage.getItem('yt_api_key');
+  const claudeKey = localStorage.getItem('claude_api_key');
+  if (!ytKey || !claudeKey) { showToast('API 키를 먼저 설정해주세요'); return; }
+
+  const overlay = document.getElementById('analyzing-overlay');
+  const stepEl = document.getElementById('analyzing-step');
+  overlay.classList.add('show');
+  document.getElementById('analyze-btn').disabled = true;
+
+  try {
+    stepEl.textContent = '유튜브 트렌드 데이터 수집 중...';
+    const ytRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&chart=mostPopular&regionCode=KR&maxResults=20&key=${ytKey}`);
+    const ytData = await ytRes.json();
+    const videos = ytData.items || [];
+
+    stepEl.textContent = '구글 검색으로 트렌드 신호 수집 중...';
+    const searchResults = [];
+    const queries = ['한국 유튜브 트렌드 2026', '쇼츠 인기 콘텐츠 최근', '유튜브 알고리즘 트렌드'];
+    for (const q of queries) {
+      try {
+        const sRes = await fetch(`https://www.googleapis.com/customsearch/v1?key=${ytKey}&cx=${SEARCH_CX}&q=${encodeURIComponent(q)}&num=5`);
+        const sData = await sRes.json();
+        if (sData.items) searchResults.push(...sData.items.map(i => i.snippet || i.title || ''));
+      } catch(e) {}
     }
-    analyzeTrends(data.items);
-    showToast('트렌드 데이터 업데이트 완료!');
-  } catch (e) {
-    showToast('데이터 수집 실패. API 키를 확인해주세요.');
+
+    stepEl.textContent = 'Claude AI 예측 분析 중...';
+    const videoSummary = videos.slice(0, 10).map(v =>
+      `제목: ${v.snippet.title} | 조회수: ${parseInt(v.statistics.viewCount).toLocaleString()} | 채널: ${v.snippet.channelTitle}`
+    ).join('\n');
+    const searchSummary = searchResults.slice(0, 8).join('\n');
+
+    const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': claudeKey, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{
+          role: 'user',
+          content: `유튜브 트렌드 예측 전문가로서 아래 데이터를 분析하세요. JSON만 출력하고 다른 텍스트는 없어야 합니다.
+
+현재 유튜브 인기 영상:
+${videoSummary}
+
+검색 트렌드:
+${searchSummary}
+
+JSON 형식:
+{
+  "current_trend": "현재 주요 트렌드 한 줄",
+  "trend_direction": "상승/하강/유지",
+  "next_trend": "1~2주 후 예상 트렌드",
+  "upload_timing": "최적 업로드 시기",
+  "confidence_what": 99,
+  "confidence_when": 82,
+  "mood_score": {"그리움": 75, "설렘": 60, "성공욕구": 80, "평화": 45},
+  "signal_strength": {"tiktok": 85, "instagram": 70, "youtube": 58},
+  "dejavu_patterns": ["패턴1", "패턴2", "패턴3"],
+  "monthly_schedule": [{"month": "5월", "theme": "테마", "action": "할 일"}, {"month": "6월", "theme": "테마", "action": "할 일"}],
+  "weekly_schedule": [{"week": "이번 주", "action": "할 일"}, {"week": "다음 주", "action": "할 일"}, {"week": "3주 후", "action": "할 일"}],
+  "daily_tasks": ["오늘 할 일1", "오늘 할 일2", "오늘 할 일3"],
+  "gap_detected": false,
+  "gap_description": "",
+  "channel_open_ready": false,
+  "channel_open_reason": "아직 이른 이유",
+  "pattern_repeat_warning": false,
+  "pattern_repeat_desc": "",
+  "analysis_summary": "전체 분析 요약 2~3문장",
+  "opposite_scenario": "예측이 틀릴 경우 시나리오"
+}`
+        }]
+      })
+    });
+
+    const claudeData = await claudeRes.json();
+    const rawText = claudeData.content[0].text;
+    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+    const result = JSON.parse(jsonMatch[0]);
+
+    stepEl.textContent = '결과 적용 중...';
+    applyResults(result);
+    showToast('✅ AI 예측 분析 완료!');
+
+  } catch(e) {
+    showToast('오류: ' + e.message);
+    console.error(e);
+  } finally {
+    overlay.classList.remove('show');
+    document.getElementById('analyze-btn').disabled = false;
   }
 }
 
-function analyzeTrends(videos) {
-  if (!videos || videos.length === 0) return;
-  const titles = videos.map(v => v.snippet.title).join(' ');
-  const moods = analyzeMoods(titles);
-  updateMoodGauges(moods);
-  updateSignalStrength(videos);
-  updateTrendItems(videos);
-  const now = new Date();
-  document.querySelector('.header-left p').textContent =
-    `TikTok → Instagram → YouTube · ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} 업데이트`;
+function applyResults(r) {
+  // 무드
+  const mv = [r.mood_score.그리움, r.mood_score.설렘, r.mood_score.성공욕구, r.mood_score.평화];
+  mv.forEach((v,i) => {
+    const pct = Math.round(v);
+    const f = document.getElementById(`mood-${i+1}`);
+    const v1 = document.getElementById(`mood-${i+1}-val`);
+    const p = document.getElementById(`mood-pct-${i+1}`);
+    if (f) f.style.width = pct+'%';
+    if (v1) v1.textContent = pct+'%';
+    if (p) p.textContent = pct+'%';
+  });
+
+  // 신호
+  const sm = {'tiktok': r.signal_strength.tiktok, 'insta': r.signal_strength.instagram, 'youtube': r.signal_strength.youtube};
+  Object.entries(sm).forEach(([p,v]) => {
+    const g = document.getElementById(`sig-${p}`);
+    const vl = document.getElementById(`sig-${p}-val`);
+    if (g) g.style.width = (v||0)+'%';
+    if (vl) vl.textContent = (v||0)+'%';
+  });
+
+  // 메트릭
+  document.getElementById('trend-signal').textContent = r.trend_direction;
+  document.getElementById('open-signal').textContent = r.channel_open_ready ? '준비됨!' : '대기중';
+
+  // 예측 결과
+  document.getElementById('prediction-empty').style.display = 'none';
+  const pd = document.getElementById('prediction-results');
+  pd.style.display = 'block';
+  pd.innerHTML = `
+    <div class="prediction-card">
+      <div class="prediction-header">
+        <div class="prediction-title">🔮 AI 트렌드 예측 결과</div>
+        <div class="prediction-confidence">내용 ${r.confidence_what}% · 타이밍 ${r.confidence_when}%</div>
+      </div>
+      <div class="prediction-metrics">
+        <div class="pred-metric">
+          <div class="pred-metric-label">현재 트렌드</div>
+          <div class="pred-metric-value" style="color:var(--insta)">${r.current_trend}</div>
+        </div>
+        <div class="pred-metric">
+          <div class="pred-metric-label">다음 트렌드</div>
+          <div class="pred-metric-value" style="color:var(--purple)">${r.next_trend}</div>
+        </div>
+        <div class="pred-metric">
+          <div class="pred-metric-label">최적 업로드</div>
+          <div class="pred-metric-value" style="color:var(--youtube)">${r.upload_timing}</div>
+        </div>
+      </div>
+      <div class="prediction-body">${r.analysis_summary}</div>
+      <div style="background:var(--surface2);border-radius:8px;padding:12px;font-size:12px;color:var(--text-muted)">
+        <strong style="color:var(--tiktok)">반대 시나리오:</strong> ${r.opposite_scenario}
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">채널 오픈 신호</div>
+      <div style="font-size:13px;line-height:1.7;color:${r.channel_open_ready?'var(--youtube)':'var(--text-muted)'}">
+        ${r.channel_open_ready ? '✅ 채널 오픈 준비 완료!' : '⏳ ' + r.channel_open_reason}
+      </div>
+    </div>
+  `;
+
+  // 타임라인
+  document.getElementById('timeline-content').innerHTML = `
+    <div class="timeline-item now">
+      <div class="tl-label">현재 — 유튜브 쇼츠</div>
+      <div class="tl-title">${r.current_trend}</div>
+      <div class="tl-desc">방향: ${r.trend_direction}</div>
+      <span class="tl-badge now">진행 중</span>
+    </div>
+    <div class="timeline-item future">
+      <div class="tl-label">1~2주 후 예측</div>
+      <div class="tl-title">${r.next_trend}</div>
+      <div class="tl-desc">최적 업로드: ${r.upload_timing}</div>
+      <span class="tl-badge future">예측 · ${r.confidence_when}%</span>
+    </div>
+  `;
+
+  // 스케줄
+  document.getElementById('schedule-content').innerHTML = `
+    <div class="schedule-grid">
+      <div class="schedule-col">
+        <div class="schedule-col-title">월간</div>
+        ${(r.monthly_schedule||[]).map(s=>`<div class="schedule-item" style="border-color:var(--purple)"><div class="schedule-item-date">${s.month}</div><div class="schedule-item-title">${s.theme}</div><div class="schedule-item-desc">${s.action}</div></div>`).join('')}
+      </div>
+      <div class="schedule-col">
+        <div class="schedule-col-title">주간</div>
+        ${(r.weekly_schedule||[]).map(s=>`<div class="schedule-item" style="border-color:var(--accent)"><div class="schedule-item-date">${s.week}</div><div class="schedule-item-title">${s.action}</div></div>`).join('')}
+      </div>
+      <div class="schedule-col">
+        <div class="schedule-col-title">일간 할 일</div>
+        ${(r.daily_tasks||[]).map(t=>`<div class="schedule-item" style="border-color:var(--youtube)"><div class="schedule-item-title">${t}</div></div>`).join('')}
+      </div>
+    </div>
+  `;
+
+  // 데자뷰
+  document.getElementById('dejavu-content').innerHTML = (r.dejavu_patterns||[]).map(p=>
+    `<div style="padding:10px 12px;background:var(--surface2);border-radius:8px;margin-bottom:8px;font-size:12px">${p}</div>`
+  ).join('') || '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:12px">패턴 없음</div>';
+
+  // 경고
+  if (r.pattern_repeat_warning) {
+    const box = document.getElementById('warning-box');
+    box.className = 'warning-box danger';
+    box.querySelector('.warning-title').textContent = '⚠ 패턴 반복 경고!';
+    box.querySelector('.warning-title').style.color = 'var(--tiktok)';
+    box.querySelector('.warning-desc').textContent = r.pattern_repeat_desc;
+  }
+  if (r.gap_detected) showToast('⚡ 갭 감지! ' + r.gap_description);
+  if (r.channel_open_ready) {
+    document.getElementById('c5').textContent = '✓';
+    document.getElementById('c5').style.color = 'var(--youtube)';
+  }
 }
 
 function analyzeMoods(titles) {
-  const keywords = {
+  const kw = {
     그리움: ['추억','그리움','옛날','돌아','기억','아련','그때','향수'],
     설렘: ['설렘','두근','새로운','시작','여행','꿈','희망','미래'],
     성공욕구: ['성공','부자','억','돈','직장','취업','목표','도전','성장'],
     평화: ['힐링','평화','쉬','자연','조용','명상','릴렉스','여유']
   };
   const scores = {};
-  for (const [mood, words] of Object.entries(keywords)) {
-    scores[mood] = words.filter(w => titles.includes(w)).length;
-  }
-  const total = Object.values(scores).reduce((a, b) => a + b, 0) || 1;
-  const base = { 그리움: 40, 설렘: 35, 성공욕구: 45, 평화: 30 };
-  return {
-    그리움: Math.min(95, base.그리움 + (scores.그리움 / total) * 40),
-    설렘: Math.min(95, base.설렘 + (scores.설렘 / total) * 40),
-    성공욕구: Math.min(95, base.성공욕구 + (scores.성공욕구 / total) * 40),
-    평화: Math.min(95, base.평화 + (scores.평화 / total) * 40),
-  };
+  for (const [m,words] of Object.entries(kw)) scores[m] = words.filter(w=>titles.includes(w)).length;
+  const total = Object.values(scores).reduce((a,b)=>a+b,0)||1;
+  const base = {그리움:40,설렘:35,성공욕구:45,평화:30};
+  return Object.fromEntries(Object.entries(base).map(([k,v])=>[k,Math.min(95,v+(scores[k]/total)*40)]));
 }
 
-function updateMoodGauges(moods) {
-  const vals = [Math.round(moods.그리움), Math.round(moods.설렘), Math.round(moods.성공욕구), Math.round(moods.평화)];
-  const rows = document.querySelectorAll('#tab-dashboard .gauge-row');
-  rows.forEach((row, i) => {
-    if (vals[i] === undefined) return;
-    const fill = row.querySelector('.gauge-fill');
-    const value = row.querySelector('.gauge-value');
-    if (fill) fill.style.width = vals[i] + '%';
-    if (value) value.textContent = vals[i] + '%';
-  });
-}
-
-function updateSignalStrength(videos) {
-  const views = videos.map(v => parseInt(v.statistics.viewCount || 0));
-  const maxView = Math.max(...views);
-  const avgView = views.reduce((a, b) => a + b, 0) / views.length;
-  const strength = Math.min(92, Math.round((avgView / maxView) * 100 + 30));
-  const gauges = document.querySelectorAll('#tab-signals .gauge-fill');
-  const values = document.querySelectorAll('#tab-signals .gauge-value');
-  const levels = [Math.min(95, strength + 8), Math.min(85, strength), Math.min(75, strength - 12)];
-  gauges.forEach((g, i) => { if (levels[i]) g.style.width = levels[i] + '%'; });
-  values.forEach((v, i) => { if (levels[i]) v.textContent = levels[i] + '%'; });
-}
-
-function updateTrendItems(videos) {
-  const container = document.querySelector('#tab-signals .card:last-child > div');
-  if (!container) return;
-  container.innerHTML = videos.slice(0, 3).map(v => `
-    <div style="padding:10px 12px;background:var(--surface2);border-radius:8px;margin-bottom:8px">
-      <div style="font-size:12px;font-weight:500;margin-bottom:3px">${v.snippet.title.slice(0, 42)}${v.snippet.title.length > 42 ? '...' : ''}</div>
-      <div style="font-size:11px;color:var(--text-muted)">조회수 ${parseInt(v.statistics.viewCount).toLocaleString()} · ${v.snippet.channelTitle}</div>
-    </div>
-  `).join('');
-}
-
-// UI 함수
 function showTab(name, btn) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.getElementById('tab-' + name).classList.add('active');
-  btn.classList.add('active');
-}
-
-function showSchedule(type, btn) {
-  document.querySelectorAll('.sch-tab').forEach(t => t.classList.remove('active'));
-  btn.classList.add('active');
-  ['monthly','weekly','daily'].forEach(t => {
-    document.getElementById('sch-' + t).style.display = t === type ? 'block' : 'none';
-  });
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  if (btn) btn.classList.add('active');
 }
 
 function toggleTask(el) {
   el.classList.toggle('done');
   el.querySelector('.task-check').textContent = el.classList.contains('done') ? '✓' : '';
-  showToast('체크리스트 저장됨');
+  showToast('저장됨');
 }
 
 function updateVideo(val) {
   val = parseInt(val);
   document.getElementById('video-count').textContent = val;
-  document.getElementById('video-progress').style.width = Math.round(val / 369 * 100) + '%';
+  document.getElementById('video-progress').style.width = Math.round(val/369*100)+'%';
   document.getElementById('c1').textContent = val >= 50 ? '✓' : '○';
   document.getElementById('c1').style.color = val >= 50 ? 'var(--youtube)' : 'var(--insta)';
   showToast('영상 현황 저장됨');
@@ -1128,7 +755,7 @@ function triggerWarning() {
   box.className = 'warning-box danger';
   box.querySelector('.warning-title').textContent = '⚠ 패턴 반복 경고 발생!';
   box.querySelector('.warning-title').style.color = 'var(--tiktok)';
-  box.querySelector('.warning-desc').textContent = 'AI가 3주 전과 동일한 "감성 여행" 패턴을 반복 추천하려 합니다. 새로운 방향 탐색이 필요합니다.';
+  box.querySelector('.warning-desc').textContent = 'AI가 기존 패턴을 반복 추천하려 합니다. 새로운 방향 탐색이 필요합니다.';
 }
 
 function clearWarning() {
@@ -1136,19 +763,17 @@ function clearWarning() {
   box.className = 'warning-box safe';
   box.querySelector('.warning-title').textContent = '패턴 반복 경고 없음';
   box.querySelector('.warning-title').style.color = 'var(--youtube)';
-  box.querySelector('.warning-desc').textContent = '현재 분析기가 새로운 방향을 탐색 중입니다. 과거 패턴 반복이 감지되지 않았습니다.';
+  box.querySelector('.warning-desc').textContent = '현재 분析기가 새로운 방향을 탐색 중입니다.';
 }
 
 function showToast(msg) {
-  const toast = document.getElementById('save-toast');
-  toast.textContent = msg;
-  toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 2500);
+  const t = document.getElementById('save-toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
 }
 
-// 시작
-checkApiKey();
+checkKeys();
 </script>
-
 </body>
 </html>
