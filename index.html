@@ -469,6 +469,120 @@
 
   .save-toast.show { opacity: 1; transform: translateY(0); }
 
+  /* API 설정 화면 */
+  .api-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: var(--bg);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .api-box {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    max-width: 480px;
+    width: 100%;
+  }
+
+  .api-title {
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .api-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 24px;
+    line-height: 1.6;
+  }
+
+  .api-input {
+    width: 100%;
+    padding: 11px 14px;
+    background: var(--surface2);
+    border: 0.5px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: var(--mono);
+    outline: none;
+    margin-bottom: 8px;
+    transition: border-color 0.2s;
+  }
+
+  .api-input:focus { border-color: rgba(91,143,255,0.4); }
+  .api-input::placeholder { color: var(--text-dim); }
+
+  .api-error {
+    font-size: 11px;
+    color: var(--tiktok);
+    font-family: var(--mono);
+    margin-bottom: 12px;
+    display: none;
+  }
+
+  .api-note {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    margin-top: 12px;
+    line-height: 1.6;
+  }
+
+  /* 분석 로딩 */
+  .analyzing {
+    display: none;
+    text-align: center;
+    padding: 40px 0;
+  }
+
+  .analyzing.show { display: block; }
+
+  .analyzing-text {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-family: var(--mono);
+    margin-top: 16px;
+  }
+
+  .spinner {
+    width: 32px;
+    height: 32px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* 설정 버튼 */
+  .settings-btn {
+    position: fixed;
+    bottom: 24px; left: 24px;
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text-muted);
+    cursor: pointer;
+    z-index: 50;
+    transition: all 0.2s;
+  }
+
+  .settings-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.2); }
+
   input[type=range] {
     width: 100%;
     accent-color: var(--purple);
@@ -497,6 +611,24 @@
 </style>
 </head>
 <body>
+
+<!-- API 설정 화면 -->
+<div class="api-overlay" id="api-overlay">
+  <div class="api-box">
+    <div class="api-title">YouTube API 키 설정</div>
+    <div class="api-desc">
+      실제 트렌드 데이터를 분석하려면 YouTube Data API v3 키가 필요해요.<br>
+      Google Cloud Console에서 발급받은 API 키를 입력해주세요.
+    </div>
+    <input class="api-input" type="password" id="api-key-input" placeholder="AIzaSy..." />
+    <div class="api-error" id="api-error">API 키가 올바르지 않아요. 다시 확인해주세요.</div>
+    <button class="btn btn-primary" onclick="saveApiKey()">분析기 시작하기</button>
+    <div class="api-note">
+      ※ API 키는 이 브라우저에만 저장되며 외부로 전송되지 않아요.<br>
+      ※ 하루 무료 요청 한도: 10,000 유닛
+    </div>
+  </div>
+</div>
 
 <div class="app">
 
@@ -843,8 +975,124 @@
 </div>
 
 <div class="save-toast" id="save-toast">저장됨</div>
+<button class="settings-btn" onclick="resetApiKey()">⚙ API 키 재설정</button>
 
 <script>
+// API 키 관리
+function checkApiKey() {
+  const key = localStorage.getItem('yt_api_key');
+  if (key) {
+    document.getElementById('api-overlay').style.display = 'none';
+    loadTrendData(key);
+  }
+}
+
+function saveApiKey() {
+  const key = document.getElementById('api-key-input').value.trim();
+  if (!key || !key.startsWith('AIza')) {
+    document.getElementById('api-error').style.display = 'block';
+    return;
+  }
+  document.getElementById('api-error').style.display = 'none';
+  localStorage.setItem('yt_api_key', key);
+  document.getElementById('api-overlay').style.display = 'none';
+  loadTrendData(key);
+}
+
+function resetApiKey() {
+  localStorage.removeItem('yt_api_key');
+  document.getElementById('api-key-input').value = '';
+  document.getElementById('api-overlay').style.display = 'flex';
+}
+
+// YouTube 데이터 수집
+async function loadTrendData(apiKey) {
+  showToast('트렌드 데이터 수집 중...');
+  try {
+    const res = await fetch(
+      `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&chart=mostPopular&regionCode=KR&maxResults=20&key=${apiKey}`
+    );
+    const data = await res.json();
+    if (data.error) {
+      showToast('API 오류: ' + data.error.message);
+      return;
+    }
+    analyzeTrends(data.items);
+    showToast('트렌드 데이터 업데이트 완료!');
+  } catch (e) {
+    showToast('데이터 수집 실패. API 키를 확인해주세요.');
+  }
+}
+
+function analyzeTrends(videos) {
+  if (!videos || videos.length === 0) return;
+  const titles = videos.map(v => v.snippet.title).join(' ');
+  const moods = analyzeMoods(titles);
+  updateMoodGauges(moods);
+  updateSignalStrength(videos);
+  updateTrendItems(videos);
+  const now = new Date();
+  document.querySelector('.header-left p').textContent =
+    `TikTok → Instagram → YouTube · ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} 업데이트`;
+}
+
+function analyzeMoods(titles) {
+  const keywords = {
+    그리움: ['추억','그리움','옛날','돌아','기억','아련','그때','향수'],
+    설렘: ['설렘','두근','새로운','시작','여행','꿈','희망','미래'],
+    성공욕구: ['성공','부자','억','돈','직장','취업','목표','도전','성장'],
+    평화: ['힐링','평화','쉬','자연','조용','명상','릴렉스','여유']
+  };
+  const scores = {};
+  for (const [mood, words] of Object.entries(keywords)) {
+    scores[mood] = words.filter(w => titles.includes(w)).length;
+  }
+  const total = Object.values(scores).reduce((a, b) => a + b, 0) || 1;
+  const base = { 그리움: 40, 설렘: 35, 성공욕구: 45, 평화: 30 };
+  return {
+    그리움: Math.min(95, base.그리움 + (scores.그리움 / total) * 40),
+    설렘: Math.min(95, base.설렘 + (scores.설렘 / total) * 40),
+    성공욕구: Math.min(95, base.성공욕구 + (scores.성공욕구 / total) * 40),
+    평화: Math.min(95, base.평화 + (scores.평화 / total) * 40),
+  };
+}
+
+function updateMoodGauges(moods) {
+  const vals = [Math.round(moods.그리움), Math.round(moods.설렘), Math.round(moods.성공욕구), Math.round(moods.평화)];
+  const rows = document.querySelectorAll('#tab-dashboard .gauge-row');
+  rows.forEach((row, i) => {
+    if (vals[i] === undefined) return;
+    const fill = row.querySelector('.gauge-fill');
+    const value = row.querySelector('.gauge-value');
+    if (fill) fill.style.width = vals[i] + '%';
+    if (value) value.textContent = vals[i] + '%';
+  });
+}
+
+function updateSignalStrength(videos) {
+  const views = videos.map(v => parseInt(v.statistics.viewCount || 0));
+  const maxView = Math.max(...views);
+  const avgView = views.reduce((a, b) => a + b, 0) / views.length;
+  const strength = Math.min(92, Math.round((avgView / maxView) * 100 + 30));
+  const gauges = document.querySelectorAll('#tab-signals .gauge-fill');
+  const values = document.querySelectorAll('#tab-signals .gauge-value');
+  const levels = [Math.min(95, strength + 8), Math.min(85, strength), Math.min(75, strength - 12)];
+  gauges.forEach((g, i) => { if (levels[i]) g.style.width = levels[i] + '%'; });
+  values.forEach((v, i) => { if (levels[i]) v.textContent = levels[i] + '%'; });
+}
+
+function updateTrendItems(videos) {
+  const container = document.querySelector('#tab-signals .card:last-child > div');
+  if (!container) return;
+  container.innerHTML = videos.slice(0, 3).map(v => `
+    <div style="padding:10px 12px;background:var(--surface2);border-radius:8px;margin-bottom:8px">
+      <div style="font-size:12px;font-weight:500;margin-bottom:3px">${v.snippet.title.slice(0, 42)}${v.snippet.title.length > 42 ? '...' : ''}</div>
+      <div style="font-size:11px;color:var(--text-muted)">조회수 ${parseInt(v.statistics.viewCount).toLocaleString()} · ${v.snippet.channelTitle}</div>
+    </div>
+  `).join('');
+}
+
+// UI 함수
 function showTab(name, btn) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -888,15 +1136,18 @@ function clearWarning() {
   box.className = 'warning-box safe';
   box.querySelector('.warning-title').textContent = '패턴 반복 경고 없음';
   box.querySelector('.warning-title').style.color = 'var(--youtube)';
-  box.querySelector('.warning-desc').textContent = '현재 분석기가 새로운 방향을 탐색 중입니다. 과거 패턴 반복이 감지되지 않았습니다.';
+  box.querySelector('.warning-desc').textContent = '현재 분析기가 새로운 방향을 탐색 중입니다. 과거 패턴 반복이 감지되지 않았습니다.';
 }
 
 function showToast(msg) {
   const toast = document.getElementById('save-toast');
   toast.textContent = msg;
   toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 2000);
+  setTimeout(() => toast.classList.remove('show'), 2500);
 }
+
+// 시작
+checkApiKey();
 </script>
 
 </body>
