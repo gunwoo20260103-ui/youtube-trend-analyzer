@@ -583,6 +583,16 @@ async function runFullAnalysis() {
       const geminiData = await geminiRes.json();
       reportHtml = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
       reportHtml = reportHtml.replace(/```html/g,'').replace(/```/g,'').trim();
+    } else {
+      const errData = await geminiRes.json();
+      const errMsg = errData.error?.message || geminiRes.status;
+      reportHtml = `<div style="color:#ff4060;padding:12px;background:rgba(255,64,96,0.08);border-radius:8px;font-size:12px">
+        <strong>Gemini API 오류 (${geminiRes.status}):</strong><br>${errMsg}<br><br>
+        <strong>해결 방법:</strong><br>
+        1. aistudio.google.com에서 새 API 키 발급<br>
+        2. ⚙ API 키 재설정 버튼으로 새 키 입력<br>
+        3. Generative Language API가 활성화되어 있는지 확인
+      </div>`;
     }
 
     stepEl.textContent = '결과 화면 적용 중...';
