@@ -182,11 +182,14 @@ input[type=range] { width: 100%; accent-color: var(--purple); margin: 8px 0; }
     <input class="api-input" type="password" id="yt-key" placeholder="AIzaSy...">
     <div class="api-label">Claude API 키 (예측 두뇌)</div>
     <input class="api-input" type="password" id="claude-key" placeholder="sk-ant-api03-...">
-    <div class="api-error" id="api-error">API 키를 확인해주세요. YouTube: AIzaSy... / Claude: sk-ant...</div>
+    <div class="api-label">Gemini API 키 (보고서 작성)</div>
+    <input class="api-input" type="password" id="gemini-key" placeholder="AIzaSy... (aistudio.google.com에서 발급)">
+    <div class="api-error" id="api-error">API 키를 확인해주세요. YouTube: AIzaSy... / Claude: sk-ant... / Gemini: AIzaSy...</div>
     <button class="btn btn-primary" onclick="saveKeys()" style="margin-top:4px">분析기 시작하기</button>
     <div class="api-note">
       ※ YouTube API: 하루 10,000 유닛 무료<br>
       ※ Claude API: 예측 분析 시에만 사용 (토큰 절약)<br>
+      ※ Gemini API: 보고서 작성 시에만 사용 (구글 크레딧)<br>
       ※ Google Search CX: 자동 적용됨
     </div>
   </div>
@@ -436,7 +439,8 @@ const SEARCH_CX = '05d5e6cdf48ac4858';
 function checkKeys() {
   const yt = localStorage.getItem('yt_api_key');
   const cl = localStorage.getItem('claude_api_key');
-  if (yt && cl) {
+  const gm = localStorage.getItem('gemini_api_key');
+  if (yt && cl && gm) {
     document.getElementById('api-overlay').style.display = 'none';
     loadYoutubeData(yt);
   }
@@ -445,13 +449,15 @@ function checkKeys() {
 function saveKeys() {
   const yt = document.getElementById('yt-key').value.trim();
   const cl = document.getElementById('claude-key').value.trim();
-  if (!yt.startsWith('AIza') || !cl.startsWith('sk-ant')) {
+  const gm = document.getElementById('gemini-key').value.trim();
+  if (!yt.startsWith('AIza') || !cl.startsWith('sk-ant') || !gm.startsWith('AIza')) {
     document.getElementById('api-error').style.display = 'block';
     return;
   }
   document.getElementById('api-error').style.display = 'none';
   localStorage.setItem('yt_api_key', yt);
   localStorage.setItem('claude_api_key', cl);
+  localStorage.setItem('gemini_api_key', gm);
   document.getElementById('api-overlay').style.display = 'none';
   loadYoutubeData(yt);
 }
@@ -460,6 +466,7 @@ function resetKeys() {
   localStorage.clear();
   document.getElementById('yt-key').value = '';
   document.getElementById('claude-key').value = '';
+  document.getElementById('gemini-key').value = '';
   document.getElementById('api-overlay').style.display = 'flex';
 }
 
@@ -561,7 +568,8 @@ async function runFullAnalysis() {
     ).join('\n');
 
     const today = new Date().toLocaleDateString('ko-KR');
-    const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${ytKey}`, {
+    const geminiKey = localStorage.getItem('gemini_api_key');
+    const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
