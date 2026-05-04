@@ -472,7 +472,11 @@ function resetKeys() {
 
 async function loadYoutubeData(apiKey) {
   try {
-    const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&chart=mostPopular&regionCode=KR&maxResults=20&key=${apiKey}`);
+    const res = await fetch('http://localhost:5000/api/youtube', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ api_key: apiKey, endpoint: 'videos', params: { part: 'snippet,statistics', chart: 'mostPopular', regionCode: 'KR', maxResults: 20 } })
+    });
     const data = await res.json();
     if (data.error) return;
     window._ytVideos = data.items;
@@ -522,7 +526,11 @@ async function runFullAnalysis() {
 
   try {
     stepEl.textContent = '유튜브 트렌드 데이터 수집 중...';
-    const ytRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&chart=mostPopular&regionCode=KR&maxResults=20&key=${ytKey}`);
+    const ytRes = await fetch('http://localhost:5000/api/youtube', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ api_key: ytKey, endpoint: 'videos', params: { part: 'snippet,statistics', chart: 'mostPopular', regionCode: 'KR', maxResults: 20 } })
+    });
     const ytData = await ytRes.json();
     const videos = ytData.items || [];
 
@@ -531,7 +539,11 @@ async function runFullAnalysis() {
     const queries = ['한국 유튜브 트렌드 2026', '쇼츠 인기 콘텐츠 최근', '유튜브 알고리즘 트렌드'];
     for (const q of queries) {
       try {
-        const sRes = await fetch(`https://www.googleapis.com/customsearch/v1?key=${ytKey}&cx=${SEARCH_CX}&q=${encodeURIComponent(q)}&num=5`);
+        const sRes = await fetch('http://localhost:5000/api/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ api_key: ytKey, cx: SEARCH_CX, query: q, num: 5 })
+        });
         const sData = await sRes.json();
         if (sData.items) searchResults.push(...sData.items.map(i => i.snippet || i.title || ''));
       } catch(e) {}
@@ -543,9 +555,9 @@ async function runFullAnalysis() {
     const searchSummary = searchResults.slice(0,10).join('\n');
 
     stepEl.textContent = 'Claude AI 핵심 예측 분析 중...';
-    const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
+    const claudeRes = await fetch('http://localhost:5000/api/claude', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': claudeKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      headers: { 'Content-Type': 'application/json', 'x-api-key': claudeKey, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 3000,
@@ -569,13 +581,13 @@ async function runFullAnalysis() {
 
     const today = new Date().toLocaleDateString('ko-KR');
     const geminiKey = localStorage.getItem('gemini_api_key');
-    const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`, {
+    const geminiRes = await fetch('http://localhost:5000/api/gemini', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+      body: JSON.stringify({ api_key: geminiKey, model: 'gemini-2.0-flash', payload: {
         contents: [{ parts: [{ text: `유튜브 트렌드 분析 보고서를 HTML로 작성하세요. 스타일 없이 순수 HTML 태그만 사용하세요. 마크다운 코드블록 없이 HTML만 출력하세요.\n\n데이터:\n현재트렌드: ${result.current_trend}\n방향: ${result.trend_direction}\n다음트렌드: ${result.next_trend}\n업로드최적시기: ${result.upload_timing}\n분析요약: ${result.analysis_summary}\n트렌드순위:\n${trendRanksSummary}\n반대시나리오: ${result.opposite_scenario}\n\nHTML 구조:\n<div class="report-wrap">\n<h2 class="report-title">유튜브 트렌드 분析 보고서</h2>\n<p class="report-meta">분析일: ${today} | 신뢰도 내용 ${result.confidence_what}% · 타이밍 ${result.confidence_when}%</p>\n<h3 class="report-h3">1. 현재 시장 상황 분析</h3>\n<p class="report-p">[현재 트렌드 상황 상세 설명 4~5문장]</p>\n<h3 class="report-h3">2. 트렌드 순위 분析 (1~5위)</h3>\n[각 순위를 div.report-rank으로 감싸서: 순위/이름/방향/설명/변화신호/대응방법 포함]\n<h3 class="report-h3">3. 트렌드 변화 신호 분析</h3>\n<p class="report-p">[각 트렌드 변화 시작 신호 상세 설명]</p>\n<h3 class="report-h3">4. 다음 트렌드 선제 대응 전략</h3>\n<p class="report-p">[다음 트렌드를 겨냥한 구체적 전략 4~5가지]</p>\n<h3 class="report-h3">5. 리스크 및 대응 시나리오</h3>\n<p class="report-p">[반대 시나리오와 대응 방법]</p>\n</div>` }] }],
         generationConfig: { maxOutputTokens: 2000, temperature: 0.7 }
-      })
+      }})
     });
 
     let reportHtml = '';
